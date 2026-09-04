@@ -1,62 +1,62 @@
 # aws-aurora-db
 
-Script de ejemplo para conectarse a una base de datos **Amazon Aurora (MySQL)** usando **AWS IAM Database Authentication** en lugar de una contraseña tradicional.
+Example script for connecting to an **Amazon Aurora (MySQL)** database using **AWS IAM Database Authentication** instead of a traditional password.
 
-En vez de guardar una contraseña de base de datos, el script le pide a AWS un token de acceso temporal (válido 15 minutos) usando tus credenciales de IAM, y lo usa para autenticarse. Así no hay contraseñas de base de datos que administrar ni rotar.
+Instead of storing a database password, the script requests a short-lived access token (valid for 15 minutes) from AWS using your IAM credentials, and uses it to authenticate. That way there's no database password to manage or rotate.
 
-## Requisitos previos
+## Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) instalado.
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configurado con un usuario/rol IAM que tenga permiso `rds-db:connect` sobre el usuario de base de datos correspondiente.
-- Un usuario de base de datos creado con autenticación IAM habilitada (`IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS'`), con los privilegios que necesites.
-- El certificado raíz de Amazon RDS (`global-bundle.pem`), necesario para la conexión TLS. Descárgalo así:
+- [uv](https://docs.astral.sh/uv/) installed.
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured with an IAM user/role that has `rds-db:connect` permission on the corresponding database user.
+- A database user created with IAM authentication enabled (`IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS'`), with the privileges you need.
+- The Amazon RDS root certificate (`global-bundle.pem`), required for the TLS connection. Download it with:
 
   ```bash
   curl -o global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
   ```
 
-## Instalación
+## Installation
 
-Clona el repositorio e instala las dependencias con `uv`:
+Clone the repository and install the dependencies with `uv`:
 
 ```bash
-git clone <url-del-repo>
-cd aws-aurora-db
+git clone https://github.com/jcatanop/aurora-mysql-snipt.git
+cd aurora-mysql-snipt
 uv sync
 ```
 
-## Configuración
+## Configuration
 
-Las credenciales y datos de conexión **no van en el código**, sino en un archivo `.env` en la raíz del proyecto (este archivo está en `.gitignore` y nunca se sube al repositorio).
+Connection details and credentials **don't live in the code** — they go in a `.env` file at the root of the project (this file is in `.gitignore` and is never pushed to the repository).
 
-Copia la plantilla de ejemplo y complétala con tus propios datos:
+Copy the example template and fill it in with your own values:
 
 ```bash
 cp .env.example .env
 ```
 
-Edita `.env` con los valores de tu instancia de Aurora:
+Edit `.env` with your Aurora instance's values:
 
 ```env
-DB_HOST=tu-cluster.cluster-xxxxxxxx.us-east-1.rds.amazonaws.com
+DB_HOST=your-cluster.cluster-xxxxxxxx.us-east-1.rds.amazonaws.com
 DB_PORT=3306
 DB_NAME=mysql
-DB_USER=tu_usuario_iam
+DB_USER=your_iam_db_user
 AWS_REGION=us-east-1
 SSL_CA=./global-bundle.pem
 ```
 
-## Uso
+## Usage
 
-Con `.env` y `global-bundle.pem` en su lugar, ejecuta:
+With `.env` and `global-bundle.pem` in place, run:
 
 ```bash
 uv run main.py
 ```
 
-Si todo está bien configurado (permisos de IAM, security group de la base de datos y usuario con autenticación IAM habilitada), el script se conecta y muestra la versión del motor de la base de datos.
+If everything is configured correctly (IAM permissions, the database's security group, and a user with IAM authentication enabled), the script connects and prints the database engine version.
 
-## Notas de seguridad
+## Security notes
 
-- Nunca subas al repositorio los archivos `.env` ni `*.pem` — ambos están excluidos vía `.gitignore`.
-- El token de autenticación se genera al vuelo en cada ejecución y expira a los 15 minutos; no se almacena en ningún lado.
+- Never commit `.env` or `*.pem` files — both are excluded via `.gitignore`.
+- The auth token is generated on the fly on every run and expires after 15 minutes; it is never stored anywhere.
